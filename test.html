@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>hushfile</title>
+    </head>
+    
+    <body style="padding: 80px 0 80px 0;">
+        <input type="file" id="uploadfile" />
+        <script src="jquery-1.9.1.min.js"></script>
+        <script src="chunkmanager.js"></script>
+        <script>
+            $(document).ready(function() {
+                $('#uploadfile').change(function(e) {
+                    var file = this.files[0];
+                    var ChunkManager = window.chunkmanager();
+                    var cm = new ChunkManager({'filename':file.name});
+                    cm.splitFile(file, function() {
+                        console.log("File successfully splitted");
+                        cm.joinFile(function(url) {
+                            console.log("file joined");
+                            $('body').append('<a href="' + url + '">' + file.name + '</a>');
+                        }, function(e) {
+                            console.log(e);
+                        });
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>
