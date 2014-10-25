@@ -337,6 +337,27 @@
 		}, error);
 	}
 
+	var splitWorker = URL.createObjectURL(new Blob(['(',function() {
+		onmessage = function(event) {
+			var message = event.data;
+			var blob = message.file;
+			var chunksize = message.chunksize;
+			var start = 0;
+
+			while(start < blob.size) {
+				var end = start + chunksize;
+				postMessage({
+					'chunk': blob.slice(start, end, blob.type),
+					'type': 'chunk'
+				});
+				start = end;
+			}
+			postMessage({
+				'type': 'success'
+			})
+		}
+	}.toString(),')()'], {type: 'application/javascript'}));
+
 	ChunkedFile.fromFile = function(args, success, error) {
 		//args can be the just file as well, check typeof
 		if(!args.file) {
@@ -352,7 +373,7 @@
 			"filename": file.name,
 			"metadata": {type: file.type}
 		}, function(cf) {
-			var worker = new Worker('splitworker.js');
+			var worker = new Worker(splitWorker);
 			worker.onmessage = function(event) {
 				var message = event.data;
 
