@@ -10,7 +10,7 @@
 
 	// Mock of a Store implementation
 	// Used to verify the interface and ChunkManager
-	var MockStore = function() {
+	var BlobStore = function() {
 		var self = this;
 		self.files = {};
 		self.current = null;
@@ -331,7 +331,7 @@
 			self.store.close();
 		}
 
-		self.store = new MockStore();
+		self.store = new BlobStore();
 		self.store.open(self.filename, function() {
 			if(success) success(self);
 		}, error);
