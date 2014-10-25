@@ -21,7 +21,7 @@
 		// [error]: function - callback error
 		self.open = function(filename, success, error) {
 			if(!filename) {
-				var e = new Error("Bad filename")
+				var e = new Error("Bad filename " + filename);
 				if(error) error(e); else throw e;
 			}
 			if(!self.current) {
@@ -77,7 +77,7 @@
 		// [success]: function(index)
 		// [error]: function
 		// [index]: integer - if not set, chunk is appended
-		self.set = function(chunk, success, error, index) {
+		self.put = function(chunk, success, error, index) {
 			var i = index || self.files[self.current]['chunks'].length
 			self._checkOpen(error);
 			self.files[self.current]['chunks'][i] = chunk;
@@ -161,6 +161,74 @@
 		}
 	}
 
+
+	// Store for mozilla browsers
+/*	function MozillaStore() {
+		var self = this;
+		var version = 1;
+		self.db = undefined;
+		self.store = undefined;
+		self.chunks = 0;
+
+		self.open = function(filename, success, error) {
+			var request = window.indexedDB.open(filename, version);
+
+			request.onblocked = function(e) {
+				if(error) error();
+			}
+
+			request.onupgradeneeded = function(e) {
+				var db = request.result;
+				db.createObjectStore("chunks", {keyPath: "index"})
+			}
+
+			request.onsuccess = function(e){
+				self.db = request.result;
+				var trans = db.transaction(["chunks"], "readwrite");
+				selfstore = trans.objectStore("files");
+
+				//do some setup finding the number of chunks
+
+				if(success) success();
+			}
+
+			request.onerror = function(e) {
+				if(error) error();
+			}
+		}
+
+		// Check if a file has been opened
+		// [error]: function - callback if not open
+		self._checkOpen = function(error) {
+			if(!self.store) {
+				var e = new Error("No open file");
+				if(error) error(e); else throw e;
+			}
+		}
+
+		self.set = function(chunk, success, error, index) {
+			self._checkOpen(error);
+
+			if(!index) index = self.chunks;
+
+			var request = store.put({
+				"filename": filename,
+				"index": index,
+				"contents": contents
+			});
+			
+			request.onsuccess = function(e) {
+				if(success) success(index);
+			}
+			
+			request.onerror = function(e) {
+				if(error) error(e); else throw e;
+			}
+		}
+
+	}
+*/
+/*
 	// Public API to handle split and collection of chunks
 	function ChunkManager(config) {
 		var self = this;
@@ -209,6 +277,100 @@
 		self.store = new MockStore();
 		self.store.open(self.filename, config.onload, config.onerror);
 	}
+*/
+//	return ChunkManager;
 
-	return ChunkManager;
+	// {"filename": string, "metadata": {"type": string}}
+	function ChunkedFile(config, success, error) {
+		var self = this;
+		self.filename = config.filename;
+		config.metadata = config.metadata || {type: "text/plain"};
+		self.chunkIndices = []; //array of chunk indexes
+
+		self.chunks = function() {
+			return self.chunkIndices.length;
+		}
+
+		self.addChunk = function(chunk, success, error, index) {
+			if(!index) index = self.chunks();
+			self.chunkIndices.push(index);
+			self.store.put(chunk, function(index) {
+				if(success) success(index);
+			}, error, index);
+		}
+
+		self.getChunk = function(index, success, error) {
+			self.store.get(index, function(chunk) {
+				if(success) success(chunk);
+			}, error);
+		}
+
+		self.join = function(success, error, indices) {
+			self.store.all(function(chunks) {
+				if(indices) {
+					var blobs = []
+					for(i in indices) {
+						var chunk = chunks[i];
+						if(!chunk) {
+							var e = new Error("Chunk does not exist.");
+							if(error) error(e); else throw e;
+						} else {
+							blobs[i] = chunk;
+						}
+					}
+					b = new Blob(chunks, config.metadata)
+				} else {
+					b = new Blob(chunks, config.metadata);
+				}
+				console.log(b);
+				if(success) success(URL.createObjectURL(b))
+			}, error);
+		}
+
+		self.close = function() {
+			self.store.close();
+		}
+
+		self.store = new MockStore();
+		self.store.open(self.filename, function() {
+			if(success) success(self);
+		}, error);
+	}
+
+	ChunkedFile.fromFile = function(args, success, error) {
+		//args can be the just file as well, check typeof
+		if(!args.file) {
+			var e = new Error("File is not defined");
+			if(error) error(e); else throw e;
+		}
+		var file = args.file;
+		console.log(file);
+		args.chunksize = args.chunksize || 1024*1024;
+		var size = file.size;
+		var chunkedFile;
+		chunkedFile = new ChunkedFile({
+			"filename": file.name,
+			"metadata": {type: file.type}
+		}, function(cf) {
+			var worker = new Worker('splitworker.js');
+			worker.onmessage = function(event) {
+				var message = event.data;
+
+				switch(message.type) {
+					case 'chunk':	
+						console.log("Received chunk");
+						cf.addChunk(message.chunk);
+					break;
+
+					case 'success':
+						worker.terminate();
+						if(success) success(cf);
+					break;						
+				}
+			}
+			worker.postMessage(args);
+		}, error);
+	}
+
+	return ChunkedFile;
 }));

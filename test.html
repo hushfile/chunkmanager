@@ -13,17 +13,19 @@
             $(document).ready(function() {
                 $('#uploadfile').change(function(e) {
                     var file = this.files[0];
-                    var ChunkManager = window.chunkmanager();
-                    var cm = new ChunkManager({'filename':file.name});
-                    cm.splitFile(file, function() {
-                        console.log("File successfully splitted");
-                        cm.joinFile(function(url) {
+                    var ChunkedFile = window.chunkmanager();
+
+                    //var cm = new ChunkManager({'filename':file.name});
+                    var cf = ChunkedFile.fromFile({
+                        "file": file
+                    }, function(cf) {
+                        cf.join(function(url) {
                             console.log("file joined");
                             $('body').append('<a href="' + url + '">' + file.name + '</a>');
                         }, function(e) {
                             console.log(e);
-                        });
-                    });
+                        });        
+                    });         
                 });
             });
         </script>
