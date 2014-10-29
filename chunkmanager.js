@@ -40,7 +40,7 @@
 			}, error);
 		}
 
-		self.join = function(success, error, indices) {
+		self.getFile = function(success, error, indices) {
 			var chunks = self.chunks;
 			if(indices) {
 				chunks = [];

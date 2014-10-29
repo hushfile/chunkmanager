@@ -19,7 +19,7 @@
                     var cf = ChunkedFile.fromFile({
                         "file": file
                     }, function(cf) {
-                        cf.join(function(file) {
+                        cf.getFile(function(file) {
                             console.log("file joined");
                             $('body').append('<a href="' + URL.createObjectURL(file) + '">' + file.name + '</a>');
                         }, function(e) {
