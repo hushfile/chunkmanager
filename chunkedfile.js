@@ -4,7 +4,7 @@
 	} else if(typeof exports === 'object') {
 		module.exports = factory();
 	} else {
-		root.chunkmanager = factory;
+		root.chunkedfile = factory;
 	}
 }(this, function() {
 
@@ -23,7 +23,6 @@
 		self.addChunk = function(chunk, success, error, index) {
 			if(!index) index = self.size();
 			self.chunks[index] = chunk;
-			console.log("Added chunk");
 			if(success) success(index);
 		}
 
@@ -111,7 +110,6 @@
 
 			switch(message.type) {
 				case 'chunk':	
-					console.log("Received chunk");
 					chunkedFile.addChunk(message.chunk);
 				break;
 

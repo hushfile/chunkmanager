@@ -8,12 +8,12 @@
     <body style="padding: 80px 0 80px 0;">
         <input type="file" id="uploadfile" />
         <script src="jquery-1.9.1.min.js"></script>
-        <script src="chunkmanager.js"></script>
+        <script src="chunkedfile.js"></script>
         <script>
             $(document).ready(function() {
                 $('#uploadfile').change(function(e) {
                     var file = this.files[0];
-                    var ChunkedFile = window.chunkmanager();
+                    var ChunkedFile = window.chunkedfile();
 
                     //var cm = new ChunkManager({'filename':file.name});
                     var cf = ChunkedFile.fromFile({
